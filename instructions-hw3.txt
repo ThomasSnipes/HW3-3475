@@ -1,5 +1,5 @@
-CSE 375/475 Assignment
- #3 (20 points)
+CSE 375/475 
+Assignment #3 (20 points)
 Spring 2024
 
 Introduction:
@@ -27,7 +27,7 @@ Introduction:
   to develop a simple application that spawns a pre-defined number of threads that
   operate on the implemented open-addressed hash set of integer elements. Each of these
   threads executes a pre-defined number of operations on the data structure with the
-  following distribution: 80\% contains, 10% insert; 10% remove. For simplicity, elements
+  following distribution: 80% contains, 10% insert; 10% remove. For simplicity, elements
   to be used by these data structure operations are random.
   The outcome of each operation should be recorded and the expected size
   of the data structure at the end of the application execution should be computed.
@@ -39,7 +39,7 @@ Introduction:
   The goal of the homework is to contrast the performance of the three implementations.
   It is required to produce at least three plots that show performance exploring different configurations.
   You are allowed to also change the percentage of operations during the tests, if you wish;
-  but do not forget to evaluate the specified mix 80\% contains, 10% insert; 10% remove.
+  but do not forget to evaluate the specified mix 80% contains, 10% insert; 10% remove.
 
   The transactional version of the data structure uses very advanced synchronization
   abstractions, which are not yet as robust as classical locking mechanisms, such as mutex.
