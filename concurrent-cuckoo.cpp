@@ -10,6 +10,7 @@
 #include <future>
 #include <cstdlib>
 #include <type_traits>
+#include <cstring>
 
 template<typename T>
 class PhasedCuckooHashSet {
@@ -23,10 +24,6 @@ private:
 
     std::random_device rd;
     std::mt19937 gen;
-
- 
-
-   // std::mutex contains_lock;
 
     // Function to generate a random integer between min and max
     int rand_int(int min, int max) {
@@ -54,15 +51,28 @@ private:
 
     
     // Translate floats and other data types into a string of bytes in order to hash
-    // Standard hash
-    int hash0(const T& x) {
-        std::uint64_t hashed_value = std::hash<T>{}(x);
-        return hashed_value;
+    uint64_t hash0(const T& x) {
+        // std::uint64_t hashed_value = std::hash<T>{}(x);
+        // return hashed_value;
+
+        unsigned char buffer[sizeof(T)];
+
+        // Copy the bytes of the object into the buffer
+        std::memcpy(buffer, &x, sizeof(T));
+
+        // Hash the buffer
+        std::hash<std::string> hasher;
+        std::string byte_string(reinterpret_cast<char*>(buffer), sizeof(T));
+        size_t hash_value = hasher(byte_string);
+
+        // Convert the hash value to uint64_t
+        return static_cast<uint64_t>(hash_value) % capacity;
     }
 
     uint64_t hash1(const T& x) {
-        std::uint64_t hashed_value = std::hash<T>{}(x);
-        return hashed_value / 2;
+        //std::uint64_t hashed_value = std::hash<T>{}(x);
+        //return hashed_value / 2;
+        return hash0(x) / 2;
     }
 
 
@@ -72,17 +82,17 @@ private:
         if (std::is_same<T, int>::value) {
             // Populate with random integers
             for(int i = 0; i < half; ++i) {
-                add(rand_int(0, 10000));
+                add(rand_int(0, 1000000));
             }
         } else if (std::is_same<T, float>::value) {
             // Populate with random floats
             for(int i = 0; i < half; ++i) {
-                add(rand_float(0.0f, 10000.0f));
+                add(rand_float(0.0f, 1000000.0f));
             }
         } else if (std::is_same<T, double>::value) {
             // Populate with random doubles
             for(int i = 0; i < half; ++i) {
-                add(rand_doub(0.0, 10000.0));
+                add(rand_doub(0.0, 1000000.0));
             }
         } else if (std::is_same<T, char>::value) {
             // Populate with random chars
@@ -123,7 +133,6 @@ public:
 
     bool contains(const T& x) {
         acquire(x);
-        //std::lock_guard<std::mutex> lock(contains_lock); // Lock the mutex
         // Check both tables for the element
         for (int i = 0; i < 2; ++i) {
             int h = (i == 0) ? hash0(x) : hash1(x);
@@ -208,37 +217,30 @@ public:
 
         int h0 = hash0(x) % capacity;
         int h1 = hash1(x) % capacity;
-        //std::cout << h0 << "," << h1 << "\n";
 
         int i = -1;
         int h = -1;
         bool mustResize = false;
 
-       
         auto& set0 = table[0][h0];
         auto& set1 = table[1][h1];
-        //std::cout << "SIZES: " << set0.size() << "," << set1.size() << "\n";
 
         if (set0.size() < THRESHOLD) {
             set0.push_back(x);
-            //std::cout<<"1\n";
             release(x);
             return true;
         } else if (set1.size() < THRESHOLD) {
             set1.push_back(x);
-            //std::cout<<"2\n";
             release(x);
             return true;
         } else if (set0.size() < PROBE_SIZE) {
             set0.push_back(x);
             i = 0;
             h = h0;
-            //std::cout<<"3\n";
         } else if (set1.size() < PROBE_SIZE) {
             set1.push_back(x);
             i = 1;
             h = h1;
-            //std::cout<<"4\n";
         } else {
             
             mustResize = true;
@@ -285,7 +287,6 @@ public:
         for (auto& row : oldTable) {
             for (auto& set : row) {
                 for (auto& z : set) {
-                    
                     add(z);
                 }
             }
@@ -366,7 +367,6 @@ public:
             exp_size += result.second;
 		}
 
-
 		// Print execution time for each thread
 		for (int i = 0; i < exec_times.size(); ++i) {
 			std::cout << "Thread "<<i<< " time: " << exec_times[i] << "\n" << std::endl;
@@ -380,13 +380,12 @@ public:
 };
 
 
-
 int main() {
-    int threads = 6;
-    int iters = 1666;
-    int size = 2500;
+    int threads = 2;
+    int iters = 3750;
+    int size = 5000;
 
-    PhasedCuckooHashSet<int> cuckooHashSet(size); 
+    PhasedCuckooHashSet<float> cuckooHashSet(size); 
     cuckooHashSet.run(threads, iters);
 
     return 0;
